@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Burger Hub — AI Digital Host</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #ff6b00; --orange-light: #ff9500;
+    --green: #25D366; --bg: #0f0f0f;
+    --surface: #1a1a1a; --surface2: #222;
+    --border: #2a2a2a; --text: #eeeeee; --muted: #888;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Nunito',sans-serif; background:var(--bg);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background-image: radial-gradient(ellipse at 15% 50%,rgba(255,107,0,0.08) 0%,transparent 55%),
+                      radial-gradient(ellipse at 85% 20%,rgba(255,149,0,0.05) 0%,transparent 50%);
+  }
+  .chat-wrapper {
+    width:430px; height:700px; display:flex; flex-direction:column;
+    border-radius:28px; overflow:hidden; position:relative;
+    box-shadow:0 40px 100px rgba(0,0,0,0.7),0 0 0 1px rgba(255,107,0,0.15);
+  }
+
+  /* Header */
+  .chat-header {
+    background:linear-gradient(135deg,#ff6b00,#ff9500);
+    padding:16px 18px; display:flex; align-items:center; gap:12px;
+    position:relative; overflow:hidden; flex-shrink:0;
+  }
+  .chat-header::after { content:'🍔'; position:absolute; right:-10px; top:-10px; font-size:80px; opacity:0.08; transform:rotate(15deg); }
+  .header-avatar { width:48px; height:48px; background:rgba(255,255,255,0.22); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .header-text h1 { font-family:'Bebas Neue',sans-serif; font-size:20px; color:#fff; letter-spacing:2.5px; }
+  .header-text p { font-size:11px; color:rgba(255,255,255,0.85); font-weight:700; display:flex; align-items:center; gap:5px; }
+  .live-dot { width:7px; height:7px; background:#7fff00; border-radius:50%; animation:livePulse 2s infinite; }
+  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(1.4);} }
+  .restart-btn { margin-left:auto; background:rgba(255,255,255,0.18); border:none; border-radius:10px; padding:7px 12px; color:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:12px; cursor:pointer; z-index:1; }
+  .restart-btn:hover { background:rgba(255,255,255,0.3); }
+
+  /* Messages */
+  .chat-messages { flex:1; background:var(--bg); overflow-y:auto; padding:18px 14px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
+  .chat-messages::-webkit-scrollbar { width:3px; }
+  .chat-messages::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+
+  /* Bubbles */
+  .msg { display:flex; align-items:flex-end; gap:8px; animation:fadeUp 0.3s ease; }
+  .msg.bot { flex-direction:row; } .msg.user { flex-direction:row-reverse; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+  .bot-av { width:30px; height:30px; background:linear-gradient(135deg,var(--orange),var(--orange-light)); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .bubble { max-width:78%; padding:11px 15px; border-radius:18px; font-size:13.5px; line-height:1.55; font-weight:600; white-space:pre-wrap; }
+  .msg.bot .bubble { background:var(--surface); color:var(--text); border-bottom-left-radius:4px; border:1px solid var(--border); }
+  .msg.user .bubble { background:linear-gradient(135deg,var(--orange),var(--orange-light)); color:#fff; border-bottom-right-radius:4px; }
+
+  /* Menu Card in Chat */
+  .menu-card { max-width:88%; background:var(--surface); border:1px solid var(--border); border-radius:18px; border-bottom-left-radius:4px; overflow:hidden; animation:fadeUp 0.3s ease; }
+  .menu-card-hdr { background:linear-gradient(135deg,var(--orange),var(--orange-light)); padding:10px 14px; font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:2px; color:#fff; }
+  .menu-cat { padding:10px 14px 4px; }
+  .menu-cat-title { font-size:10px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+  .menu-item-row { display:flex; justify-content:space-between; align-items:center; font-size:12.5px; font-weight:700; color:#ccc; padding:3px 0; border-bottom:1px solid #1f1f1f; }
+  .menu-item-row:last-child { border-bottom:none; }
+  .menu-item-row .iname { color:var(--text); }
+  .menu-item-row .iprice { color:var(--orange-light); font-size:11.5px; }
+  .menu-card-footer { padding:8px 14px 12px; font-size:11.5px; color:var(--muted); font-weight:700; }
+
+  /* Quick Replies */
+  .qr-wrap { display:flex; flex-wrap:wrap; gap:7px; padding:2px 0 4px 38px; animation:fadeUp 0.35s ease; }
+  .qr-btn { background:var(--surface); border:1.5px solid var(--orange); color:var(--orange-light); padding:7px 13px; border-radius:20px; font-size:12.5px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; transition:all 0.18s; }
+  .qr-btn:hover { background:var(--orange); color:#fff; transform:translateY(-1px); }
+
+  /* Typing */
+  .typing-row { display:flex; align-items:flex-end; gap:8px; animation:fadeUp 0.3s ease; }
+  .typing-bubble { background:var(--surface); border:1px solid var(--border); border-radius:18px; border-bottom-left-radius:4px; padding:12px 16px; display:flex; gap:5px; align-items:center; }
+  .td { width:7px; height:7px; background:var(--orange); border-radius:50%; animation:bounce 1.2s infinite; }
+  .td:nth-child(2){animation-delay:0.2s;}.td:nth-child(3){animation-delay:0.4s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-6px);opacity:1;}}
+
+  /* Input */
+  .chat-input-area { background:#161616; padding:12px 14px; display:flex; gap:9px; align-items:center; border-top:1px solid var(--border); flex-shrink:0; }
+  .chat-input { flex:1; background:var(--surface); border:1.5px solid var(--border); border-radius:22px; padding:10px 16px; color:var(--text); font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:600; outline:none; transition:border-color 0.2s; }
+  .chat-input:focus { border-color:var(--orange); }
+  .chat-input::placeholder { color:#444; }
+  .send-btn { width:42px; height:42px; background:linear-gradient(135deg,var(--orange),var(--orange-light)); border:none; border-radius:13px; cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s,box-shadow 0.2s; flex-shrink:0; }
+  .send-btn:hover { transform:scale(1.08); box-shadow:0 4px 15px rgba(255,107,0,0.5); }
+  .send-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* ═══ ORDER MODAL ═══ */
+  .modal-overlay { display:none; position:absolute; inset:0; background:rgba(0,0,0,0.95); z-index:100; flex-direction:column; border-radius:28px; overflow:hidden; }
+  .modal-overlay.open { display:flex; animation:fadeUp 0.3s ease; }
+  .modal-header { background:linear-gradient(135deg,#ff6b00,#ff9500); padding:15px 18px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .modal-header h2 { font-family:'Bebas Neue',sans-serif; font-size:19px; color:#fff; letter-spacing:2px; flex:1; }
+  .modal-close { background:rgba(255,255,255,0.2); border:none; border-radius:10px; width:34px; height:34px; color:#fff; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+  /* Steps bar */
+  .modal-steps { display:flex; background:#161616; padding:12px 18px; flex-shrink:0; }
+  .step-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
+  .step-item::after { content:''; position:absolute; top:13px; left:60%; width:80%; height:2px; background:var(--border); }
+  .step-item:last-child::after { display:none; }
+  .step-circle { width:26px; height:26px; border-radius:50%; background:var(--border); color:var(--muted); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; z-index:1; transition:all 0.3s; }
+  .step-circle.active { background:var(--orange); color:#fff; }
+  .step-circle.done { background:#25D366; color:#fff; }
+  .step-label { font-size:10px; font-weight:800; color:var(--muted); }
+  .step-label.active { color:var(--orange); }
+
+  /* Modal body */
+  .modal-body { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .modal-body::-webkit-scrollbar { width:3px; }
+  .modal-body::-webkit-scrollbar-thumb { background:#333; border-radius:2px; }
+
+  /* Menu items */
+  .cat-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:2px; color:var(--orange); margin-bottom:6px; padding-bottom:5px; border-bottom:1px solid var(--border); }
+  .menu-grid { display:flex; flex-direction:column; gap:7px; margin-bottom:12px; }
+  .menu-row { display:flex; align-items:center; gap:10px; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:9px 12px; transition:all 0.2s; }
+  .menu-row.selected { border-color:var(--orange); background:#1e1200; }
+  .mi-info { flex:1; }
+  .mi-name { font-size:13px; font-weight:800; color:var(--text); }
+  .mi-price { font-size:11.5px; color:var(--muted); font-weight:700; margin-top:1px; }
+  .qty-ctrl { display:flex; align-items:center; gap:7px; }
+  .qbtn { width:28px; height:28px; border-radius:8px; border:none; cursor:pointer; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .qbtn.minus { background:var(--border); color:var(--muted); }
+  .qbtn.minus:hover { background:#444; color:#fff; }
+  .qbtn.plus { background:var(--orange); color:#fff; }
+  .qbtn.plus:hover { background:var(--orange-light); }
+  .qnum { font-size:14px; font-weight:900; color:var(--text); min-width:18px; text-align:center; }
+
+  /* Cart bar */
+  .cart-bar { background:var(--surface2); border-top:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .cart-info { font-size:13px; font-weight:800; color:var(--text); }
+  .cart-info span { color:var(--orange); }
+  .next-btn { background:linear-gradient(135deg,var(--orange),var(--orange-light)); border:none; border-radius:12px; padding:10px 20px; color:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:13.5px; cursor:pointer; transition:all 0.2s; }
+  .next-btn:hover { transform:translateY(-1px); box-shadow:0 4px 15px rgba(255,107,0,0.4); }
+  .next-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* Form */
+  .detail-form { display:flex; flex-direction:column; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  .form-label { font-size:12px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:1px; }
+  .form-input { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:12px 15px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; outline:none; transition:border-color 0.2s; width:100%; }
+  .form-input:focus { border-color:var(--orange); }
+  .form-input::placeholder { color:#444; }
+
+  /* Summary */
+  .summary-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+  .summary-hdr { background:linear-gradient(135deg,var(--orange),var(--orange-light)); padding:10px 16px; font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:2px; color:#fff; }
+  .summary-sec { padding:12px 16px; border-bottom:1px solid var(--border); }
+  .summary-sec:last-child { border-bottom:none; }
+  .summary-sec-title { font-size:11px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .s-row { display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#ccc; margin-bottom:5px; }
+  .s-row:last-child { margin-bottom:0; }
+  .s-row.total { color:var(--text); font-size:14px; font-weight:900; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+  .s-detail { font-size:13px; font-weight:700; color:#ccc; line-height:1.7; }
+
+  .wa-order-btn { display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:#fff; text-decoration:none; padding:14px 16px; border-radius:14px; font-weight:900; font-size:15px; margin-top:4px; transition:all 0.2s; width:100%; border:none; cursor:pointer; font-family:'Nunito',sans-serif; }
+  .wa-order-btn:hover { background:#1ebe5d; transform:translateY(-1px); }
+</style>
+</head>
+<body>
+<div class="chat-wrapper">
+
+  <!-- ORDER MODAL -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal-header">
+      <div style="font-size:22px">🛒</div>
+      <h2>Place Your Order</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-steps">
+      <div class="step-item"><div class="step-circle active" id="sc1">1</div><div class="step-label active" id="sl1">Menu</div></div>
+      <div class="step-item"><div class="step-circle" id="sc2">2</div><div class="step-label" id="sl2">Details</div></div>
+      <div class="step-item"><div class="step-circle" id="sc3">3</div><div class="step-label" id="sl3">Confirm</div></div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="cart-bar" id="cartBar">
+      <div class="cart-info" id="cartInfo">0 items • <span>₹0</span></div>
+      <button class="next-btn" id="nextBtn" onclick="nextStep()" disabled>Details →</button>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-header">
+    <div class="header-avatar">🍔</div>
+    <div class="header-text">
+      <h1>Burger Hub</h1>
+      <p><span class="live-dot"></span> AI Digital Host • Always Active</p>
+    </div>
+    <button class="restart-btn" onclick="restartBot()">🔄 Restart</button>
+  </div>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input-area">
+    <input class="chat-input" id="userInput" placeholder="Apna sawaal poochein..." autocomplete="off"/>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script>
+const RESTAURANT = {
+  name:"Burger Hub",
+  timing:"4:00 PM – 1:00 AM",
+  location:"Vikash Puri, New Delhi",
+  contact:"9650652934",
+  todaySpecial:"Paneer Fried Rice + Spring Roll Combo @ ₹150"
+};
+
+const MENU = [
+  {id:1,  name:"Veg Manchurian",      cat:"Starters",    half:60,  full:100},
+  {id:2,  name:"Chilli Potato",       cat:"Starters",    half:50,  full:80 },
+  {id:3,  name:"Honey Chilli Potato", cat:"Starters",    half:60,  full:100},
+  {id:4,  name:"French Fries",        cat:"Starters",    half:50,  full:80 },
+  {id:5,  name:"Spring Roll Veg",     cat:"Starters",    half:30,  full:50 },
+  {id:6,  name:"Chilli Mushroom",     cat:"Main Course", full:80           },
+  {id:7,  name:"Chilli Onion",        cat:"Main Course", full:80           },
+  {id:8,  name:"Chilli Soya",         cat:"Main Course", full:80           },
+  {id:9,  name:"Chilli Paneer",       cat:"Main Course", full:80           },
+  {id:10, name:"Veg Fried Rice",      cat:"Rice",        half:60,  full:100},
+  {id:11, name:"Paneer Fried Rice",   cat:"Rice",        half:80,  full:130},
+];
+
+let cart = {}, currentStep = 1, customerDetails = {name:'',phone:'',address:''};
+let conversationHistory = [], isLoading = false;
+
+// ── Modal ──
+function openModal() { cart={}; currentStep=1; document.getElementById('orderModal').classList.add('open'); renderStep1(); updateStepUI(); }
+function closeModal() { document.getElementById('orderModal').classList.remove('open'); }
+
+function cartTotal() { return Object.values(cart).reduce((s,v)=>s+v.price*v.qty,0); }
+function cartCount() { return Object.values(cart).reduce((s,v)=>s+v.qty,0); }
+
+function updateStepUI() {
+  [1,2,3].forEach(i=>{
+    const c=document.getElementById(`sc${i}`), l=document.getElementById(`sl${i}`);
+    c.className='step-circle'+(i<currentStep?' done':i===currentStep?' active':'');
+    l.className='step-label'+(i===currentStep?' active':'');
+    c.textContent=i<currentStep?'✓':i;
+  });
+  const bar=document.getElementById('cartBar'), btn=document.getElementById('nextBtn'), info=document.getElementById('cartInfo');
+  if(currentStep===3){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  const cnt=cartCount();
+  info.innerHTML=`${cnt} item${cnt!==1?'s':''} • <span>₹${cartTotal()}</span>`;
+  btn.disabled=cartTotal()===0;
+  btn.textContent=currentStep===1?'Details →':'Summary →';
+}
+
+function nextStep() {
+  if(currentStep===1){ if(cartTotal()===0)return; currentStep=2; renderStep2(); }
+  else if(currentStep===2){
+    const n=document.getElementById('inp-name')?.value.trim(),
+          p=document.getElementById('inp-phone')?.value.trim(),
+          a=document.getElementById('inp-address')?.value.trim();
+    if(!n||!p||!a){ alert('Saari details bharein please!'); return; }
+    if(!/^[0-9]{10}$/.test(p)){ alert('10 digit ka valid phone number daalen!'); return; }
+    customerDetails={name:n,phone:p,address:a}; currentStep=3; renderStep3();
+  }
+  updateStepUI();
+}
+
+// Step 1 - Menu
+function renderStep1(){
+  const body=document.getElementById('modalBody');
+  const cats=[...new Set(MENU.map(i=>i.cat))];
+  body.innerHTML='';
+  cats.forEach(cat=>{
+    const wrap=document.createElement('div');
+    wrap.innerHTML=`<div class="cat-title">🍽️ ${cat}</div>`;
+    const grid=document.createElement('div'); grid.className='menu-grid';
+    MENU.filter(i=>i.cat===cat).forEach(item=>{
+      const sizes=[];
+      if(item.half) sizes.push({label:'Half',price:item.half,key:`${item.id}-half`});
+      sizes.push({label:item.half?'Full':'Regular',price:item.full,key:`${item.id}-full`});
+      sizes.forEach(sz=>{
+        const qty=cart[sz.key]?.qty||0;
+        const row=document.createElement('div');
+        row.className='menu-row'+(qty>0?' selected':'');
+        row.id=`row-${sz.key}`;
+        row.innerHTML=`
+          <div class="mi-info">
+            <div class="mi-name">${item.name}</div>
+            <div class="mi-price">${sz.label} • ₹${sz.price}</div>
+          </div>
+          <div class="qty-ctrl">
+            <button class="qbtn minus" onclick="chgQty('${sz.key}','${item.name}',${sz.price},-1,event)" ${qty===0?'disabled style="opacity:0.3"':''}>−</button>
+            <div class="qnum" id="qn-${sz.key}">${qty}</div>
+            <button class="qbtn plus" onclick="chgQty('${sz.key}','${item.name}',${sz.price},1,event)">+</button>
+          </div>`;
+        grid.appendChild(row);
+      });
+    });
+    wrap.appendChild(grid); body.appendChild(wrap);
+  });
+}
+
+function chgQty(key,name,price,delta,e){
+  e.stopPropagation();
+  const cur=cart[key]?.qty||0, nw=Math.max(0,cur+delta);
+  if(nw===0) delete cart[key]; else cart[key]={name,price,qty:nw};
+  const qEl=document.getElementById(`qn-${key}`); if(qEl) qEl.textContent=nw;
+  const row=document.getElementById(`row-${key}`); if(row) row.className='menu-row'+(nw>0?' selected':'');
+  const mb=row?.querySelector('.minus'); if(mb){mb.disabled=nw===0;mb.style.opacity=nw===0?'0.3':'1';}
+  updateStepUI();
+}
+
+// Step 2 - Customer Details
+function renderStep2(){
+  document.getElementById('modalBody').innerHTML=`
+    <div class="detail-form">
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:12px;padding:12px 15px;font-size:13px;font-weight:700;color:#ccc;">
+        🛒 <b style="color:var(--text)">${cartCount()} items</b> selected — Total: <b style="color:var(--orange)">₹${cartTotal()}</b>
+      </div>
+      <div class="form-group">
+        <div class="form-label">👤 Aapka Naam</div>
+        <input class="form-input" id="inp-name" placeholder="Jaise: Rahul Sharma" maxlength="50"/>
+      </div>
+      <div class="form-group">
+        <div class="form-label">📞 Phone Number</div>
+        <input class="form-input" id="inp-phone" placeholder="10 digit mobile number" maxlength="10" type="tel"/>
+      </div>
+      <div class="form-group">
+        <div class="form-label">🏠 Delivery Address</div>
+        <textarea class="form-input" id="inp-address" placeholder="Ghar ka pura address likhein..." rows="3" style="resize:none;"></textarea>
+      </div>
+    </div>`;
+  document.getElementById('cartBar').style.display='flex';
+  document.getElementById('nextBtn').disabled=false;
+}
+
+// Step 3 - Summary + WhatsApp
+function renderStep3(){
+  const items=Object.values(cart), total=cartTotal();
+  const itemLines=items.map(i=>`• ${i.name} ×${i.qty} = ₹${i.price*i.qty}`);
+  const waMsg=`🍔 *BURGER HUB ORDER* 🍔\n\n👤 *Naam:* ${customerDetails.name}\n📞 *Phone:* ${customerDetails.phone}\n🏠 *Address:* ${customerDetails.address}\n\n🛒 *Order:*\n${itemLines.join('\n')}\n\n💰 *Total: ₹${total}*\n\nPlease confirm karo. Thank you! 🙏`;
+  const waLink=`https://wa.me/91${RESTAURANT.contact}?text=${encodeURIComponent(waMsg)}`;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="summary-card">
+      <div class="summary-hdr">🧾 Order Summary</div>
+      <div class="summary-sec">
+        <div class="summary-sec-title">👤 Customer Details</div>
+        <div class="s-detail"><b>Naam:</b> ${customerDetails.name}<br><b>Phone:</b> ${customerDetails.phone}<br><b>Address:</b> ${customerDetails.address}</div>
+      </div>
+      <div class="summary-sec">
+        <div class="summary-sec-title">🛒 Items</div>
+        ${items.map(i=>`<div class="s-row"><span>${i.name} ×${i.qty}</span><span style="color:var(--orange-light)">₹${i.price*i.qty}</span></div>`).join('')}
+        <div class="s-row total"><span>Total</span><span>₹${total}</span></div>
+      </div>
+    </div>
+    <a href="${waLink}" target="_blank" class="wa-order-btn" onclick="onOrderPlaced()">
+      💬 WhatsApp Pe Order Bhejein
+    </a>
+    <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:4px 0">
+      Button dabate hi WhatsApp khulega — restaurant ko seedha order jayega ✅
+    </div>`;
+}
+
+function onOrderPlaced(){
+  setTimeout(()=>{
+    closeModal();
+    appendMsg(`✅ <b>${customerDetails.name}</b> ji, aapka order place ho gaya!\n\n📋 Items restaurant ko WhatsApp pe bhej diye\n📞 Jald confirm call aayegi\n⏰ Timing: ${RESTAURANT.timing}`, 'bot');
+    appendQuickReplies(['🛒 Order Karna','🍽️ Menu Dekhna','⏰ Timing & Info','📍 Location']);
+  },500);
+}
+
+// ── Show Menu in Chat ──
+function showMenuInChat(){
+  const cats=[...new Set(MENU.map(i=>i.cat))];
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;align-items:flex-end;gap:8px;animation:fadeUp 0.3s ease;';
+
+  const av=document.createElement('div'); av.className='bot-av'; av.textContent='🍔';
+  wrap.appendChild(av);
+
+  const card=document.createElement('div'); card.className='menu-card';
+
+  let html=`<div class="menu-card-hdr">🍽️ BURGER HUB MENU</div>`;
+  cats.forEach(cat=>{
+    html+=`<div class="menu-cat"><div class="menu-cat-title">${cat}</div>`;
+    MENU.filter(i=>i.cat===cat).forEach(item=>{
+      let priceStr='';
+      if(item.half) priceStr+=`Half ₹${item.half} / `;
+      priceStr+=(item.half?'Full':'') + ` ₹${item.full}`;
+      html+=`<div class="menu-item-row"><span class="iname">${item.name}</span><span class="iprice">${priceStr.trim()}</span></div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`<div class="menu-card-footer">🌟 Today's Special: Paneer Fried Rice + Spring Roll Combo @ ₹150</div>`;
+
+  card.innerHTML=html;
+  wrap.appendChild(card);
+  document.getElementById('messages').appendChild(wrap);
+  document.getElementById('messages').scrollTop=9999;
+}
+
+// ── Chat ──
+const SYSTEM_PROMPT=`Tu Burger Hub restaurant ka friendly AI Digital Host hai. Warm, helpful, Hinglish mein baat kar.
+Restaurant: Burger Hub | Timing: 4PM-1AM | Location: Vikash Puri, New Delhi | Contact: 9650652934
+Menu: Veg Manchurian(Half₹60/Full₹100), Chilli Potato(Half₹50/Full₹80), Honey Chilli Potato(Half₹60/Full₹100), French Fries(Half₹50/Full₹80), Spring Roll Veg(Half₹30/Full₹50), Chilli Mushroom/Onion/Soya/Paneer(₹80), Veg Fried Rice(Half₹60/Full₹100), Paneer Fried Rice(Half₹80/Full₹130)
+Aaj Ka Special: Paneer Fried Rice + Spring Roll Combo @ ₹150
+Order ke liye user ko "Order Karna" button dabane ko kaho. Short helpful responses do. Agar koi timing pooche to 4PM-1AM batao. Location: Vikash Puri.`;
+
+function appendMsg(html,type='bot'){
+  const d=document.createElement('div'); d.className=`msg ${type}`;
+  d.innerHTML=type==='bot'?`<div class="bot-av">🍔</div><div class="bubble">${html}</div>`:`<div class="bubble">${html}</div>`;
+  document.getElementById('messages').appendChild(d);
+  document.getElementById('messages').scrollTop=9999;
+}
+
+function appendQuickReplies(opts){
+  removeQuickReplies();
+  const d=document.createElement('div'); d.className='qr-wrap'; d.id='qr-wrap';
+  opts.forEach(o=>{
+    const b=document.createElement('button'); b.className='qr-btn'; b.textContent=o;
+    b.onclick=()=>{ removeQuickReplies(); processMsg(o); };
+    d.appendChild(b);
+  });
+  document.getElementById('messages').appendChild(d);
+  document.getElementById('messages').scrollTop=9999;
+}
+
+function removeQuickReplies(){const e=document.getElementById('qr-wrap');if(e)e.remove();}
+function showTyping(){removeTyping();const d=document.createElement('div');d.className='typing-row';d.id='typing';d.innerHTML='<div class="bot-av">🍔</div><div class="typing-bubble"><div class="td"></div><div class="td"></div><div class="td"></div></div>';document.getElementById('messages').appendChild(d);document.getElementById('messages').scrollTop=9999;}
+function removeTyping(){const e=document.getElementById('typing');if(e)e.remove();}
+
+const DEFAULT_QR = ['🛒 Order Karna','🍽️ Menu Dekhna','⏰ Timing & Info','📍 Location'];
+
+async function processMsg(text){
+  if(isLoading)return;
+  const lower=text.toLowerCase();
+
+  // Order karna
+  if(lower.includes('order karna')||lower.includes('🛒 order')){
+    appendMsg(text,'user');
+    openModal();
+    return;
+  }
+
+  // Menu Dekhna — direct show, no API needed
+  if(lower.includes('menu dekhna')||lower.includes('menu dekh')||lower.includes('🍽️ menu')||lower.includes('menu dikhao')||lower.includes('menu kya hai')){
+    appendMsg(text,'user');
+    showMenuInChat();
+    setTimeout(()=>{
+      appendMsg('Yeh raha hamara full menu! 😊\nKuch order karna ho to neeche button dabao.','bot');
+      appendQuickReplies(DEFAULT_QR);
+    },300);
+    return;
+  }
+
+  // Timing & Info — direct response
+  if(lower.includes('timing')||lower.includes('⏰')||lower.includes('kab khulta')||lower.includes('band')){
+    appendMsg(text,'user');
+    appendMsg(`⏰ <b>Burger Hub Timing:</b>\n🟢 <b>4:00 PM – 1:00 AM</b> (Daily)\n\n📞 Contact: <b>${RESTAURANT.contact}</b>\n📍 Location: <b>${RESTAURANT.location}</b>`,'bot');
+    appendQuickReplies(DEFAULT_QR);
+    return;
+  }
+
+  // Location — direct response
+  if(lower.includes('location')||lower.includes('📍')||lower.includes('kahan hai')||lower.includes('kaha hai')||lower.includes('address')){
+    appendMsg(text,'user');
+    appendMsg(`📍 <b>Burger Hub</b>\nVikash Puri, New Delhi\n\n📞 Call/WhatsApp: <b>${RESTAURANT.contact}</b>\n⏰ Timing: <b>${RESTAURANT.timing}</b>`,'bot');
+    appendQuickReplies(DEFAULT_QR);
+    return;
+  }
+
+  // AI for other messages
+  isLoading=true; document.getElementById('sendBtn').disabled=true;
+  removeQuickReplies(); appendMsg(text,'user'); showTyping();
+  try{
+    conversationHistory.push({role:'user',content:text});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:conversationHistory})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'Koi dikkat aa gayi, please dobara try karein! 🙏';
+    conversationHistory.push({role:'assistant',content:reply});
+    removeTyping(); appendMsg(reply,'bot');
+    appendQuickReplies(DEFAULT_QR);
+  }catch(e){
+    removeTyping();
+    appendMsg('Thodi connection ki dikkat aa rahi hai, please dobara try karein! 🙏','bot');
+    appendQuickReplies(DEFAULT_QR);
+  }
+  isLoading=false; document.getElementById('sendBtn').disabled=false;
+}
+
+function sendMessage(){const inp=document.getElementById('userInput');const t=inp.value.trim();if(!t||isLoading)return;inp.value='';processMsg(t);}
+document.getElementById('userInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
+
+function restartBot(){document.getElementById('messages').innerHTML='';conversationHistory=[];cart={};closeModal();init();}
+
+function init(){
+  setTimeout(()=>{
+    showTyping();
+    setTimeout(()=>{
+      removeTyping();
+      appendMsg(`🍔 <b>Burger Hub</b> mein aapka swagat hai! 🙏\n\n🌟 <b>Aaj Ka Special:</b> Paneer Fried Rice + Spring Roll Combo @ ₹150\n\nMain aapka AI Host hoon — kya help karun?`,'bot');
+      setTimeout(()=>appendQuickReplies(['🛒 Order Karna','🍽️ Menu Dekhna','⏰ Timing & Info','📍 Location','🌟 Aaj Ka Special']),400);
+    },1200);
+  },300);
+}
+window.onload=init;
+</script>
+</body>
+</html>
